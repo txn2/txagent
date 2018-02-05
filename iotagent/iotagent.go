@@ -16,16 +16,20 @@ import (
 
 // DockerStatus messages
 type DockerStatus struct {
-	Status string
+	Status string `json:"status"`
+}
+
+type AgentContainerCfg struct {
+	Containers []container.Config `json:"containers"`
 }
 
 // Agent is the main agent object for pulling and running containers.
 type Agent struct {
-	cfgUrl     string
-	poll       int
-	log        *bunyan.Logger
-	cli        *client.Client
-	containers []container.Config
+	CfgUrl string
+	Poll   int
+	Log    *bunyan.Logger
+	Cli    *client.Client
+	Cfg    *AgentContainerCfg
 }
 
 // NewAgent creates a new agent from a configuration url and a polling interval
@@ -53,14 +57,18 @@ func NewAgent(cfgUrl string, poll int) (agent Agent, err error) {
 	}
 
 	agent = Agent{
-		cfgUrl: cfgUrl,
-		poll:   poll,
-		log:    &bunyanLogger,
-		cli:    cli,
+		CfgUrl: cfgUrl,
+		Poll:   poll,
+		Log:    &bunyanLogger,
+		Cli:    cli,
 	}
 
 	cfgJson := agent.loadCfg()
+
 	agent.marshalCfg(cfgJson)
+	if err != nil {
+		return Agent{}, err
+	}
 
 	return agent, nil
 }
@@ -72,11 +80,11 @@ func (agent *Agent) PullContainers() error {
 	ctx := context.Background()
 	opts := types.ImagePullOptions{All: false}
 
-	for _, cfgContainer := range agent.containers {
-		agent.log.Info("Pull image %s.", cfgContainer.Image)
+	for _, cfgContainer := range agent.Cfg.Containers {
+		agent.Log.Info("Pull image %s.", cfgContainer.Image)
 
 		// pull container
-		responseBody, err := agent.cli.ImagePull(ctx, cfgContainer.Image, opts)
+		responseBody, err := agent.Cli.ImagePull(ctx, cfgContainer.Image, opts)
 		if err != nil {
 			return err
 		}
@@ -90,7 +98,7 @@ func (agent *Agent) PullContainers() error {
 				return err
 			}
 
-			agent.log.Info("%s image pull status: %s", cfgContainer.Image, dockerStatus.Status)
+			agent.Log.Info("%s image pull status: %s", cfgContainer.Image, dockerStatus.Status)
 		}
 
 		responseBody.Close()
@@ -99,27 +107,29 @@ func (agent *Agent) PullContainers() error {
 	return nil
 }
 
-func (agent *Agent) marshalCfg(cfgJson []byte) {
+func (agent *Agent) marshalCfg(cfgJson []byte) error {
 
-	cfgContainers := make([]container.Config, 0)
-	err := json.Unmarshal(cfgJson, &cfgContainers)
+	// make a new agent configuration object
+	agent.Cfg = &AgentContainerCfg{}
+
+	err := json.Unmarshal(cfgJson, agent.Cfg)
 	if err != nil {
-		agent.log.Error(err.Error())
-		return
+		agent.Log.Error(err.Error())
+		return err
 	}
 
-	agent.log.Info("Found %d container(s) in config.", len(cfgContainers))
+	agent.Log.Info("Found %d container(s) in config.", len(agent.Cfg.Containers))
 
-	agent.containers = cfgContainers
+	return nil
 }
 
 func (agent *Agent) loadCfg() (cfgJson []byte) {
 
-	agent.log.Info("Loading %s", agent.cfgUrl)
+	agent.Log.Info("Loading %s", agent.CfgUrl)
 
-	proto, loc := agent.convertUrl(agent.cfgUrl)
+	proto, loc := agent.convertUrl(agent.CfgUrl)
 
-	agent.log.Info("Got protocol: %s, at location: %s", proto, loc)
+	agent.Log.Info("Reading protocol: %s, at location: %s", proto, loc)
 
 	if proto == "file" {
 		return agent.loadFile(loc)
@@ -136,7 +146,7 @@ func (agent *Agent) loadFile(file string) (cfgJson []byte) {
 
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
-		agent.log.Fatal(err.Error())
+		agent.Log.Fatal(err.Error())
 		os.Exit(1)
 	}
 
@@ -147,7 +157,7 @@ func (agent *Agent) loadUrl(url string) (cfgJson []byte) {
 
 	res, err := http.Get(url)
 	if err != nil {
-		agent.log.Fatal(err.Error())
+		agent.Log.Fatal(err.Error())
 		os.Exit(1)
 	}
 
@@ -155,7 +165,7 @@ func (agent *Agent) loadUrl(url string) (cfgJson []byte) {
 
 	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		agent.log.Fatal(err.Error())
+		agent.Log.Fatal(err.Error())
 		os.Exit(1)
 	}
 

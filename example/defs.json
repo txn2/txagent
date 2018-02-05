@@ -1,6 +1,11 @@
-[
-  {
-    "image": "alpine",
-    "cmd":   ["echo", "hello world"]
-  }
-]
+{
+  "containers": [
+    {
+      "image": "alpine",
+      "cmd": [
+        "echo",
+        "hello world"
+      ]
+    }
+  ]
+}
