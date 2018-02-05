@@ -8,14 +8,15 @@ import (
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/docker/docker/api/types/container"
-	//	"github.com/docker/docker/client"
+	"github.com/docker/docker/client"
 )
 
 type Agent struct {
 	cfgUrl     string
 	poll       int
-	log        bunyan.Logger
-	containers *[]container.Config
+	log        *bunyan.Logger
+	cli        *client.Client
+	containers []container.Config
 }
 
 // NewAgent creates a new agent from a configuration url and a polling interval
@@ -27,23 +28,47 @@ func NewAgent(cfgUrl string, poll int) Agent {
 		Level:  bunyan.LogLevelDebug,
 	}
 
-	logger, err := bunyan.CreateLogger(logConfig)
+	bunyanLogger, err := bunyan.CreateLogger(logConfig)
+	if err != nil {
+		panic(err)
+	}
+	bunyanLogger.Info("Loading IoT Agent...")
+
+	// load docker client
+	dockerApiVersion := SetEnvIfEmpty("DOCKER_API_VERSION", "1.35")
+	bunyanLogger.Info("Loading Docker Client for API version %s.", dockerApiVersion)
+
+	cli, err := client.NewEnvClient()
 	if err != nil {
 		panic(err)
 	}
 
-	logger.Info("Loading IoT Agent...")
-
 	agent := Agent{
 		cfgUrl: cfgUrl,
 		poll:   poll,
-		log:    logger,
+		log:    &bunyanLogger,
+		cli:    cli,
 	}
 
 	cfgJson := agent.loadCfg()
 	agent.marshalCfg(cfgJson)
 
+	agent.PullContainers()
+
 	return agent
+}
+
+// PullContainers as defined in the configuration file located at
+// environment variable AGENT_CFG_URL
+func (agent *Agent) PullContainers() error {
+
+	for _, cfgContainer := range agent.containers {
+		agent.log.Info("Pull image %s.", cfgContainer.Image)
+	}
+
+	// TODO pull container
+
+	return nil
 }
 
 func (agent *Agent) marshalCfg(cfgJson []byte) {
@@ -57,7 +82,7 @@ func (agent *Agent) marshalCfg(cfgJson []byte) {
 
 	agent.log.Info("Found %d container(s) in config.", len(cfgContainers))
 
-	agent.containers = &cfgContainers
+	agent.containers = cfgContainers
 }
 
 func (agent *Agent) loadCfg() (cfgJson []byte) {
@@ -66,7 +91,7 @@ func (agent *Agent) loadCfg() (cfgJson []byte) {
 
 	proto, loc := agent.convertUrl(agent.cfgUrl)
 
-	agent.log.Info("proto: %s, loc: %s", proto, loc)
+	agent.log.Info("Got protocol: %s, at location: %s", proto, loc)
 
 	if proto == "file" {
 		return agent.loadFile(loc)
