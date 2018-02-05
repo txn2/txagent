@@ -1,15 +1,22 @@
 package iotagent
 
 import (
+	"bufio"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 )
+
+type DockerStatus struct {
+	Status string
+}
 
 type Agent struct {
 	cfgUrl     string
@@ -53,7 +60,10 @@ func NewAgent(cfgUrl string, poll int) Agent {
 	cfgJson := agent.loadCfg()
 	agent.marshalCfg(cfgJson)
 
-	agent.PullContainers()
+	err = agent.PullContainers()
+	if err != nil {
+		panic(err)
+	}
 
 	return agent
 }
@@ -62,11 +72,32 @@ func NewAgent(cfgUrl string, poll int) Agent {
 // environment variable AGENT_CFG_URL
 func (agent *Agent) PullContainers() error {
 
+	ctx := context.Background()
+	opts := types.ImagePullOptions{All: false}
+
 	for _, cfgContainer := range agent.containers {
 		agent.log.Info("Pull image %s.", cfgContainer.Image)
-	}
 
-	// TODO pull container
+		// pull container
+		responseBody, err := agent.cli.ImagePull(ctx, cfgContainer.Image, opts)
+		if err != nil {
+			return err
+		}
+
+		scanner := bufio.NewScanner(responseBody)
+		for scanner.Scan() {
+
+			dockerStatus := &DockerStatus{}
+			err := json.Unmarshal([]byte(scanner.Text()), dockerStatus)
+			if err != nil {
+				return err
+			}
+
+			agent.log.Info("%s image pull status: %s", cfgContainer.Image, dockerStatus.Status)
+		}
+
+		responseBody.Close()
+	}
 
 	return nil
 }

@@ -14,7 +14,6 @@ This is very early development as I refactor a number of working concepts into t
 
 # TODO
 
-- Pull containers
 - Registry authentication
 - Run containers
 - Check configuration on interval
@@ -24,3 +23,4 @@ This is very early development as I refactor a number of working concepts into t
 # DONE
 
 - Load and marshal configuration json
+- Pull containers
