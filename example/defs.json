@@ -1,0 +1,6 @@
+[
+  {
+    "image": "alpine",
+    "cmd":   ["echo", "hello world"]
+  }
+]
