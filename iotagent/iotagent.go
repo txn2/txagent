@@ -14,10 +14,12 @@ import (
 	"github.com/docker/docker/client"
 )
 
+// DockerStatus messages
 type DockerStatus struct {
 	Status string
 }
 
+// Agent is the main agent object for pulling and running containers.
 type Agent struct {
 	cfgUrl     string
 	poll       int
