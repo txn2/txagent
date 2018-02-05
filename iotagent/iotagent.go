@@ -27,7 +27,7 @@ type Agent struct {
 }
 
 // NewAgent creates a new agent from a configuration url and a polling interval
-func NewAgent(cfgUrl string, poll int) Agent {
+func NewAgent(cfgUrl string, poll int) (agent Agent, err error) {
 
 	logConfig := bunyan.Config{
 		Name:   "iotagent",
@@ -47,10 +47,10 @@ func NewAgent(cfgUrl string, poll int) Agent {
 
 	cli, err := client.NewEnvClient()
 	if err != nil {
-		panic(err)
+		return Agent{}, err
 	}
 
-	agent := Agent{
+	agent = Agent{
 		cfgUrl: cfgUrl,
 		poll:   poll,
 		log:    &bunyanLogger,
@@ -60,12 +60,7 @@ func NewAgent(cfgUrl string, poll int) Agent {
 	cfgJson := agent.loadCfg()
 	agent.marshalCfg(cfgJson)
 
-	err = agent.PullContainers()
-	if err != nil {
-		panic(err)
-	}
-
-	return agent
+	return agent, nil
 }
 
 // PullContainers as defined in the configuration file located at
