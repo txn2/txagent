@@ -11,6 +11,7 @@ import (
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 )
 
@@ -20,7 +21,9 @@ type DockerStatus struct {
 }
 
 type AgentContainerCfg struct {
-	Containers []container.Config `json:"containers"`
+	Volumes    []volume.VolumesCreateBody
+	Networks   map[string]types.NetworkCreate `json:"networks"`
+	Containers []container.Config             `json:"containers"`
 }
 
 // Agent is the main agent object for pulling and running containers.
@@ -28,8 +31,13 @@ type Agent struct {
 	CfgUrl string
 	Poll   int
 	Log    *bunyan.Logger
-	Cli    *client.Client
-	Cfg    *AgentContainerCfg
+
+	// Cli is the Docker client
+	// see https://godoc.org/github.com/moby/moby/client
+	Cli *client.Client
+
+	// Cfg holds a AgentContainerCfg marshaled from the external json
+	Cfg *AgentContainerCfg
 }
 
 // NewAgent creates a new agent from a configuration url and a polling interval
@@ -71,6 +79,55 @@ func NewAgent(cfgUrl string, poll int) (agent Agent, err error) {
 	}
 
 	return agent, nil
+}
+
+// CreateVolumes creates docker volumes defined in the json configuration.
+func (agent *Agent) CreateVolumes() error {
+	ctx := context.Background()
+
+	for _, cfgVolume := range agent.Cfg.Volumes {
+		_, err := agent.Cli.VolumeCreate(ctx, cfgVolume)
+		if err != nil {
+			agent.Log.Warn("Volume Create returned %s", err.Error())
+			return err
+		}
+
+		agent.Log.Info("Volume %s created.", cfgVolume.Name)
+	}
+
+	return nil
+}
+
+// CreateNetworks create networks defined in the config. Will not create a
+// network if it already exists.
+func (agent *Agent) CreateNetworks() error {
+	ctx := context.Background()
+
+	nets, err := agent.Cli.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		agent.Log.Warn("Network List returned %s", err.Error())
+		return err
+	}
+
+	for name, cfgNetwork := range agent.Cfg.Networks {
+		// look though list of network to see if this one already exists
+		for _, netRes := range nets {
+			if netRes.Name == name {
+				agent.Log.Warn("Network Create: Noting to do, %s already exists.", name)
+				return nil
+			}
+		}
+
+		agent.Log.Info("Got Network: %s, type: %s", name, cfgNetwork.Driver)
+		resp, err := agent.Cli.NetworkCreate(ctx, name, cfgNetwork)
+		if err != nil {
+			agent.Log.Warn("Network Create returned %s", err.Error())
+			return err
+		}
+
+		agent.Log.Info("Network Create returned %s: %s", resp.ID, resp.Warning)
+	}
+	return nil
 }
 
 // PullContainers as defined in the configuration file located at
@@ -118,6 +175,8 @@ func (agent *Agent) marshalCfg(cfgJson []byte) error {
 		return err
 	}
 
+	agent.Log.Info("Found %d volumes(s) in config.", len(agent.Cfg.Volumes))
+	agent.Log.Info("Found %d network(s) in config.", len(agent.Cfg.Networks))
 	agent.Log.Info("Found %d container(s) in config.", len(agent.Cfg.Containers))
 
 	return nil

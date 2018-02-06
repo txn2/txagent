@@ -1,4 +1,39 @@
 {
+  "volumes": [
+    {
+      "Name": "example",
+      "Labels": {
+        "co.imti.iotagent.example": "example-volume"
+      },
+      "Driver": "local"
+    }
+  ],
+  "networks": {
+    "example-net": {
+      "CheckDuplicate": false,
+      "Driver": "bridge",
+      "EnableIPv6": false,
+      "IPAM": {
+        "Driver": "default",
+        "Config": [],
+        "Options": {}
+      },
+      "Internal": true,
+      "Attachable": false,
+      "Ingress": false,
+      "Options": {
+        "com.docker.network.bridge.default_bridge": "true",
+        "com.docker.network.bridge.enable_icc": "true",
+        "com.docker.network.bridge.enable_ip_masquerade": "true",
+        "com.docker.network.bridge.host_binding_ipv4": "0.0.0.0",
+        "com.docker.network.bridge.name": "docker0",
+        "com.docker.network.driver.mtu": "1500"
+      },
+      "Labels": {
+        "co.imti.iotagent.example": "example-network"
+      }
+    }
+  },
   "containers": [
     {
       "image": "alpine",
