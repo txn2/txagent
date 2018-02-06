@@ -11,19 +11,28 @@ import (
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 )
 
 // DockerStatus messages
 type DockerStatus struct {
-	Status string `json:"status"`
+	Status string
 }
 
+// AgentContainerCfg each container in the json configuration file
 type AgentContainerCfg struct {
+	Config           container.Config
+	HostConfig       container.HostConfig
+	NetworkingConfig network.NetworkingConfig
+}
+
+// AgentCfg represents the entire json configuration file
+type AgentCfg struct {
 	Volumes    []volume.VolumesCreateBody
-	Networks   map[string]types.NetworkCreate `json:"networks"`
-	Containers []container.Config             `json:"containers"`
+	Networks   map[string]types.NetworkCreate
+	Containers map[string]AgentContainerCfg
 }
 
 // Agent is the main agent object for pulling and running containers.
@@ -36,8 +45,8 @@ type Agent struct {
 	// see https://godoc.org/github.com/moby/moby/client
 	Cli *client.Client
 
-	// Cfg holds a AgentContainerCfg marshaled from the external json
-	Cfg *AgentContainerCfg
+	// Cfg holds a AgentCfg marshaled from the external json
+	Cfg *AgentCfg
 }
 
 // NewAgent creates a new agent from a configuration url and a polling interval
@@ -137,11 +146,11 @@ func (agent *Agent) PullContainers() error {
 	ctx := context.Background()
 	opts := types.ImagePullOptions{All: false}
 
-	for _, cfgContainer := range agent.Cfg.Containers {
-		agent.Log.Info("Pull image %s.", cfgContainer.Image)
+	for name, cfgContainer := range agent.Cfg.Containers {
+		agent.Log.Info("Pull image %s for %s.", cfgContainer.Config.Image, name)
 
 		// pull container
-		responseBody, err := agent.Cli.ImagePull(ctx, cfgContainer.Image, opts)
+		responseBody, err := agent.Cli.ImagePull(ctx, cfgContainer.Config.Image, opts)
 		if err != nil {
 			return err
 		}
@@ -155,7 +164,7 @@ func (agent *Agent) PullContainers() error {
 				return err
 			}
 
-			agent.Log.Info("%s image pull status: %s", cfgContainer.Image, dockerStatus.Status)
+			agent.Log.Info("%s image pull status: %s", cfgContainer.Config.Image, dockerStatus.Status)
 		}
 
 		responseBody.Close()
@@ -164,10 +173,34 @@ func (agent *Agent) PullContainers() error {
 	return nil
 }
 
+func (agent *Agent) CreateContainers() error {
+
+	ctx := context.Background()
+
+	for name, cfgContainer := range agent.Cfg.Containers {
+		agent.Log.Info("Creating container %s from %s image.", name, cfgContainer.Config.Image)
+
+		cb, err := agent.Cli.ContainerCreate(ctx, &cfgContainer.Config, &cfgContainer.HostConfig, &cfgContainer.NetworkingConfig, name)
+		if err != nil {
+			agent.Log.Warn("Create container for %s received %s", name, err.Error())
+			return err
+		}
+
+		agent.Log.Info("Create container for %s received %s with warnings %s", name, cb.ID, cb.Warnings)
+
+		agent.Log.Info("Starting container %s", name)
+
+		// TODO START CONTAINER
+
+	}
+
+	return nil
+}
+
 func (agent *Agent) marshalCfg(cfgJson []byte) error {
 
 	// make a new agent configuration object
-	agent.Cfg = &AgentContainerCfg{}
+	agent.Cfg = &AgentCfg{}
 
 	err := json.Unmarshal(cfgJson, agent.Cfg)
 	if err != nil {

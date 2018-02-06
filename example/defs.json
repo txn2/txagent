@@ -28,19 +28,35 @@
       }
     }
   },
-  "containers": [
-    {
-      "Name": "example-a",
-      "Image": "alpine",
+  "containers": {
+    "example-a": {
+      "Config": {
+        "Image": "alpine",
+        "Cmd": [
+          "ping",
+          "8.8.8.8"
+        ]
+      },
       "NetworkingConfig": {
         "EndpointsConfig": {
-          "byp-net": {}
+          "example-net": {}
         }
       },
-      "Cmd": [
-        "ping",
-        "8.8.8.8"
-      ]
+      "HostConfig": {
+        "PortBindings": {
+          "2701/tcp": [{ "HostPort": "2701" }]
+        },
+        "Privileged": true,
+        "RestartPolicy": {"Name": "unless-stopped"},
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {
+            "max-buffer-size": "1m",
+            "max-size": "5m",
+            "mode": "non-blocking"
+          }
+        }
+      }
     }
-  ]
+  }
 }

@@ -27,4 +27,8 @@ func main() {
 		panic(err)
 	}
 
+	err = agent.CreateContainers()
+	if err != nil {
+		panic(err)
+	}
 }
