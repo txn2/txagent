@@ -30,10 +30,16 @@
   },
   "containers": [
     {
-      "image": "alpine",
-      "cmd": [
-        "echo",
-        "hello world"
+      "Name": "example-a",
+      "Image": "alpine",
+      "NetworkingConfig": {
+        "EndpointsConfig": {
+          "byp-net": {}
+        }
+      },
+      "Cmd": [
+        "ping",
+        "8.8.8.8"
       ]
     }
   ]
