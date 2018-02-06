@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
 	"github.com/docker/docker/api/types"
@@ -173,13 +174,101 @@ func (agent *Agent) PullContainers() error {
 	return nil
 }
 
+// StopRemoveContainers defined in configuration json
+func (agent *Agent) StopRemoveContainers() error {
+
+	ctx := context.Background()
+
+	listOps := types.ContainerListOptions{All: true}
+	rmOpts := types.ContainerRemoveOptions{
+		Force: true,
+	}
+
+	// get a list of existing containers, no need to stop a container
+	// if is does not exist
+	existingContainers, err := agent.Cli.ContainerList(ctx, listOps)
+	if err != nil {
+		agent.Log.Error("Container stop and remove received %s", err.Error())
+		return err
+	}
+
+	// loop and stop/remove containers
+	for _, existingContainer := range existingContainers {
+		//agent.Log.Info("Found %s container with names %s", existingContainer.State, existingContainer.Names)
+
+		for name := range agent.Cfg.Containers {
+			// is this one of ours?
+			if existingContainer.Names[0][1:] == name {
+				agent.Log.Info("Found %s in state %s.", name, existingContainer.State)
+
+				var timeout time.Duration = 30000
+				if existingContainer.State == "running" {
+					err = agent.Cli.ContainerStop(ctx, existingContainer.ID, &timeout)
+					if err != nil {
+						agent.Log.Error("Container stop remove for %s with id %s received %s", name, existingContainer.ID, err.Error())
+						continue
+					}
+					agent.Log.Info("Stopped container %s", name)
+				}
+
+				err = agent.Cli.ContainerRemove(ctx, existingContainer.ID, rmOpts)
+				if err != nil {
+					agent.Log.Error("Container stop remove for %s with id %s received %s", name, existingContainer.ID, err.Error())
+					continue
+				}
+				agent.Log.Info("Removed container %s", name)
+
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// CreateContainers defined in configuration json
 func (agent *Agent) CreateContainers() error {
 
 	ctx := context.Background()
 
+	listOps := types.ContainerListOptions{All: true}
+
+	existingContainers, err := agent.Cli.ContainerList(ctx, listOps)
+	if err != nil {
+		agent.Log.Error("Container list received %s", err.Error())
+		return err
+	}
+
+	var containerNames []string
+
+	// log out found containers and their state
+	for _, existingContainer := range existingContainers {
+		agent.Log.Info("Found %s container with names %s", existingContainer.State, existingContainer.Names)
+		containerNames = append(containerNames, existingContainer.Names...)
+	}
+
 	for name, cfgContainer := range agent.Cfg.Containers {
+
+		skip := false
+
+		// check for the existing of the same container name
+		for _, existingContainerName := range containerNames {
+			if existingContainerName[1:] == name {
+				agent.Log.Warn("Create container found container named %s, nothing to do.", existingContainerName[1:])
+
+				// TODO: check for option to start or remove, create and restart
+				skip = true
+				break
+			}
+		}
+
+		if skip {
+			continue
+		}
+
 		agent.Log.Info("Creating container %s from %s image.", name, cfgContainer.Config.Image)
 
+		// creating container
 		cb, err := agent.Cli.ContainerCreate(ctx, &cfgContainer.Config, &cfgContainer.HostConfig, &cfgContainer.NetworkingConfig, name)
 		if err != nil {
 			agent.Log.Warn("Create container for %s received %s", name, err.Error())
@@ -190,7 +279,12 @@ func (agent *Agent) CreateContainers() error {
 
 		agent.Log.Info("Starting container %s", name)
 
-		// TODO START CONTAINER
+		// starting container
+		err = agent.Cli.ContainerStart(ctx, cb.ID, types.ContainerStartOptions{})
+		if err != nil {
+			agent.Log.Warn("Container start received %s", err.Error())
+			return err
+		}
 
 	}
 

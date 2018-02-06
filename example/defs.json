@@ -57,6 +57,35 @@
           }
         }
       }
+    },
+    "example-b": {
+      "Config": {
+        "Image": "alpine",
+        "Cmd": [
+          "ping",
+          "example-a"
+        ]
+      },
+      "NetworkingConfig": {
+        "EndpointsConfig": {
+          "example-net": {}
+        }
+      },
+      "HostConfig": {
+        "PortBindings": {
+          "2702/tcp": [{ "HostPort": "2702" }]
+        },
+        "Privileged": true,
+        "RestartPolicy": {"Name": "unless-stopped"},
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {
+            "max-buffer-size": "1m",
+            "max-size": "5m",
+            "mode": "non-blocking"
+          }
+        }
+      }
     }
   }
 }

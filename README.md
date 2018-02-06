@@ -23,13 +23,15 @@ https://godoc.org/github.com/cjimti/iotagent/iotagent
 ## TODO
 
 - Registry authentication
-- Run containers
 - Check configuration on interval
 - Update containers on interval (like watchtower)
 - Remote logging
 
 ## DONE
 
+- Command line flag `--rm` to remove running containers
+- Added command line flags `--cfg` and `--poll` (see `--help`)
+- Run containers
 - Pull containers
 - Create volumes
 - Create networks (if they do not exists)
