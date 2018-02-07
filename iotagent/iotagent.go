@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/bhoriuchi/go-bunyan/bunyan"
@@ -39,7 +40,7 @@ type AgentCfg struct {
 // Agent is the main agent object for pulling and running containers.
 type Agent struct {
 	CfgUrl string
-	Poll   int
+	Poll   time.Duration
 	Log    *bunyan.Logger
 
 	// Cli is the Docker client
@@ -76,7 +77,7 @@ func NewAgent(cfgUrl string, poll int) (agent Agent, err error) {
 
 	agent = Agent{
 		CfgUrl: cfgUrl,
-		Poll:   poll,
+		Poll:   time.Duration(poll) * time.Second,
 		Log:    &bunyanLogger,
 		Cli:    cli,
 	}
@@ -140,6 +141,43 @@ func (agent *Agent) CreateNetworks() error {
 	return nil
 }
 
+// PollContainers list the status of containers on interval
+func (agent *Agent) PollContainers() error {
+	err := agent.ContainerState()
+	if err != nil {
+		agent.Log.Error("Poll Containers received %s", err.Error())
+		return err
+	}
+
+	for range time.NewTicker(agent.Poll).C {
+		agent.PollContainers()
+	}
+
+	return nil
+}
+
+func (agent *Agent) ContainerState() error {
+	ctx := context.Background()
+	listOps := types.ContainerListOptions{All: true}
+
+	// get a list of existing containers
+	existingContainers, err := agent.Cli.ContainerList(ctx, listOps)
+	if err != nil {
+		agent.Log.Error("Container state received %s", err.Error())
+		return err
+	}
+
+	for _, existingContainer := range existingContainers {
+		for name, _ := range agent.Cfg.Containers {
+			if existingContainer.Names[0][1:] == name {
+				agent.Log.Info("Container State found container %s in state %s.", name, strings.ToUpper(existingContainer.State))
+			}
+		}
+	}
+
+	return nil
+}
+
 // PullContainers as defined in the configuration file located at
 // environment variable AGENT_CFG_URL
 func (agent *Agent) PullContainers() error {
@@ -194,7 +232,6 @@ func (agent *Agent) StopRemoveContainers() error {
 
 	// loop and stop/remove containers
 	for _, existingContainer := range existingContainers {
-		//agent.Log.Info("Found %s container with names %s", existingContainer.State, existingContainer.Names)
 
 		for name := range agent.Cfg.Containers {
 			// is this one of ours?
@@ -256,7 +293,6 @@ func (agent *Agent) CreateContainers() error {
 			if existingContainerName[1:] == name {
 				agent.Log.Warn("Create container found container named %s, nothing to do.", existingContainerName[1:])
 
-				// TODO: check for option to start or remove, create and restart
 				skip = true
 				break
 			}

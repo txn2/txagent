@@ -3,16 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
-	"iotagent/iotagent"
 	"os"
 	"strconv"
+
+	"github.com/cjimti/iotagent/iotagent"
 )
 
 func main() {
 
 	// Get environment vars or use as defaults if they exist
 	cfgUrl := iotagent.SetEnvIfEmpty("AGENT_CFG_URL", "file://example/defs.json")
-	cfgPoll := iotagent.SetEnvIfEmpty("AGENT_CFG_POLL", "30000")
+	cfgPoll := iotagent.SetEnvIfEmpty("AGENT_CFG_POLL", "30")
 
 	// cast poll to int
 	cfgPollInt, err := strconv.Atoi(cfgPoll)
@@ -23,7 +24,7 @@ func main() {
 	// use env vars as defaults for command line arguments.
 	// command line arguments override environment variables.
 	cfgPtr := flag.String("cfg", cfgUrl, " Location of json configuration.")
-	pollPtr := flag.Int("poll", cfgPollInt, " Poll every millisecons.")
+	pollPtr := flag.Int("poll", cfgPollInt, " Poll every N seconds.")
 	rmPtr := flag.Bool("rm", false, " Stop and remove containers defined in "+cfgUrl)
 
 	flag.Parse()
@@ -58,6 +59,11 @@ func main() {
 	}
 
 	err = agent.CreateContainers()
+	if err != nil {
+		panic(err)
+	}
+
+	err = agent.PollContainers()
 	if err != nil {
 		panic(err)
 	}
