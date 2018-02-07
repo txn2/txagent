@@ -24,7 +24,7 @@ https://godoc.org/github.com/cjimti/iotagent/iotagent
 
 - Registry authentication
 - Check configuration on interval
-- Update containers on interval (like watchtower)
+- Option to include watchtower
 - Remote logging
 
 ## DONE
