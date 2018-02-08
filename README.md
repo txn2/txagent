@@ -32,13 +32,14 @@ Build without releasing:
 
 ## TODO
 
-- Registry authentication
+- Documentation, Use Case and Examples
 - Check configuration on interval
 - Option to include watchtower
 - Remote logging
 
 ## DONE
 
+- Registry authentication
 - Command line flag `--rm` to remove running containers
 - Added command line flags `--cfg` and `--poll` (see `--help`)
 - Run containers

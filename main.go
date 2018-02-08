@@ -13,6 +13,7 @@ func main() {
 
 	// Get environment vars or use as defaults if they exist
 	cfgUrl := iotagent.SetEnvIfEmpty("AGENT_CFG_URL", "file://example/defs.json")
+	authUrl := iotagent.SetEnvIfEmpty("AGENT_AUTH_URL", "file://example/auth.json")
 	cfgPoll := iotagent.SetEnvIfEmpty("AGENT_CFG_POLL", "30")
 
 	// cast poll to int
@@ -23,14 +24,15 @@ func main() {
 
 	// use env vars as defaults for command line arguments.
 	// command line arguments override environment variables.
-	cfgPtr := flag.String("cfg", cfgUrl, " Location of json configuration.")
+	cfgPtr := flag.String("cfg", cfgUrl, " Location of json configuration file.")
+	authPtr := flag.String("auth", authUrl, " Location of json authentication file.")
 	pollPtr := flag.Int("poll", cfgPollInt, " Poll every N seconds.")
 	rmPtr := flag.Bool("rm", false, " Stop and remove containers defined in "+cfgUrl)
 
 	flag.Parse()
 
 	// get a new agent
-	agent, err := iotagent.NewAgent(*cfgPtr, *pollPtr)
+	agent, err := iotagent.NewAgent(*cfgPtr, *authPtr, *pollPtr)
 
 	// stop and remove defined containers (exit application when complete)
 	if *rmPtr {

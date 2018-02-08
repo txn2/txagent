@@ -3,6 +3,7 @@ package iotagent
 import (
 	"bufio"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -37,11 +38,19 @@ type AgentCfg struct {
 	Containers map[string]AgentContainerCfg
 }
 
+// AgentCfg represents the entire json configuration file
+type AgentAuth struct {
+	Volumes    []volume.VolumesCreateBody
+	Networks   map[string]types.NetworkCreate
+	Containers map[string]AgentContainerCfg
+}
+
 // Agent is the main agent object for pulling and running containers.
 type Agent struct {
-	CfgUrl string
-	Poll   time.Duration
-	Log    *bunyan.Logger
+	CfgUrl  string
+	AuthUrl string
+	Poll    time.Duration
+	Log     *bunyan.Logger
 
 	// Cli is the Docker client
 	// see https://godoc.org/github.com/moby/moby/client
@@ -49,10 +58,13 @@ type Agent struct {
 
 	// Cfg holds a AgentCfg marshaled from the external json
 	Cfg *AgentCfg
+
+	// Cfg holds a map of AuthConfig by server (as key)
+	Auth map[string]types.AuthConfig
 }
 
 // NewAgent creates a new agent from a configuration url and a polling interval
-func NewAgent(cfgUrl string, poll int) (agent Agent, err error) {
+func NewAgent(cfgUrl string, authUrl string, poll int) (agent Agent, err error) {
 
 	logConfig := bunyan.Config{
 		Name:   "iotagent",
@@ -76,10 +88,11 @@ func NewAgent(cfgUrl string, poll int) (agent Agent, err error) {
 	}
 
 	agent = Agent{
-		CfgUrl: cfgUrl,
-		Poll:   time.Duration(poll) * time.Second,
-		Log:    &bunyanLogger,
-		Cli:    cli,
+		CfgUrl:  cfgUrl,
+		AuthUrl: authUrl,
+		Poll:    time.Duration(poll) * time.Second,
+		Log:     &bunyanLogger,
+		Cli:     cli,
 	}
 
 	cfgJson := agent.loadCfg()
@@ -89,7 +102,20 @@ func NewAgent(cfgUrl string, poll int) (agent Agent, err error) {
 		return Agent{}, err
 	}
 
+	authJson := agent.loadAuth()
+
+	agent.marshalAuth(authJson)
+	if err != nil {
+		return Agent{}, err
+	}
+
 	return agent, nil
+}
+
+// Authenticate a
+func (agent *Agent) Authenticate() error {
+
+	return nil
 }
 
 // CreateVolumes creates docker volumes defined in the json configuration.
@@ -183,14 +209,30 @@ func (agent *Agent) ContainerState() error {
 func (agent *Agent) PullContainers() error {
 
 	ctx := context.Background()
+
 	opts := types.ImagePullOptions{All: false}
 
 	for name, cfgContainer := range agent.Cfg.Containers {
 		agent.Log.Info("Pull image %s for %s.", cfgContainer.Config.Image, name)
 
+		// if we have authentication for this server then add it to opts
+		s := strings.Split(cfgContainer.Config.Image, "/")
+		server := s[0]
+		auth := agent.Auth[server]
+
+		if auth.Username != "" {
+			b, _ := json.Marshal(auth)
+			opts.RegistryAuth = base64.StdEncoding.EncodeToString(b)
+
+			agent.Log.Info("Found authentication for %s", server)
+			agent.Log.Info("Creds: %s", opts.RegistryAuth)
+		}
+
 		// pull container
 		responseBody, err := agent.Cli.ImagePull(ctx, cfgContainer.Config.Image, opts)
 		if err != nil {
+			agent.Log.Error("Pull imaged received: %s", err.Error())
+			// TODO: suppress error flag? (retry in the future?)
 			return err
 		}
 
@@ -327,6 +369,19 @@ func (agent *Agent) CreateContainers() error {
 	return nil
 }
 
+func (agent *Agent) marshalAuth(authJson []byte) error {
+
+	err := json.Unmarshal(authJson, &agent.Auth)
+	if err != nil {
+		agent.Log.Error(err.Error())
+		return err
+	}
+
+	agent.Log.Info("Found %d auth configs.", len(agent.Auth))
+
+	return nil
+}
+
 func (agent *Agent) marshalCfg(cfgJson []byte) error {
 
 	// make a new agent configuration object
@@ -343,6 +398,25 @@ func (agent *Agent) marshalCfg(cfgJson []byte) error {
 	agent.Log.Info("Found %d container(s) in config.", len(agent.Cfg.Containers))
 
 	return nil
+}
+
+func (agent *Agent) loadAuth() (authJson []byte) {
+
+	agent.Log.Info("Loading %s", agent.AuthUrl)
+
+	proto, loc := agent.convertUrl(agent.AuthUrl)
+
+	agent.Log.Info("Reading protocol: %s, at location: %s", proto, loc)
+
+	if proto == "file" {
+		return agent.loadFile(loc)
+	}
+
+	if proto == "http" {
+		return agent.loadUrl(loc)
+	}
+
+	return []byte{}
 }
 
 func (agent *Agent) loadCfg() (cfgJson []byte) {
