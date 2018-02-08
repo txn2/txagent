@@ -50,6 +50,7 @@ archive:
   files:
     - LICENSE
     - example/defs.json
+    - example/auth.json
 
 dockers:
   -
@@ -59,7 +60,8 @@ dockers:
     binary: iotagent
     image: cjimti/iotagent
     dockerfile: dockerfile/amd64/Dockerfile
-    tag_template: "{{ .Version }}"
+    tag_templates:
+    - "{{ .Version }}"
   -
     goos: linux
     goarch: arm
@@ -67,4 +69,5 @@ dockers:
     binary: iotagent
     image: cjimti/iotagent
     dockerfile: dockerfile/armhf/Dockerfile
-    tag_template: "armhf-{{ .Version }}"
+    tag_templates:
+    - "armhf-{{ .Version }}"
