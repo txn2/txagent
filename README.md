@@ -19,6 +19,16 @@ Intended for Raspberry Pi. Will be testing on other ARM boards as project progre
 see GoDocs
 https://godoc.org/github.com/cjimti/iotagent/iotagent
 
+### Development
+
+Uses [goreleaser](https://goreleaser.com):
+
+Install goreleaser with brew (mac):
+`brew install goreleaser/tap/goreleaser`
+
+Build without releasing:
+`goreleaser --skip-publish --rm-dist --skip-validate`
+
 
 ## TODO
 
