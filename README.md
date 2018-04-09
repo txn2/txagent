@@ -32,7 +32,7 @@ The agent can be configured with environment variables, command line flags, or a
 
 Get a list of commands.
 ```bash
-
+go run ./agent.go --help
 ```
 
 ### Example #1: Run example configurations from source.
