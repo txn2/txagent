@@ -1,4 +1,4 @@
-# iotagent - Simple Docker Container Orchestration
+# iotagent - Simplified Docker container orchestration.
 
 # Stable / Work in progress.
 
