@@ -24,8 +24,8 @@ The agent can be configured with environment variables, command line flags, or a
 
 ### Environment Variables
 
-| Prupose                    | Environment Variable | Flag   | Default Value |
-| -------                    | -------------------- | ----   | ------------- |
+| Prupose                    | Environment Variable | Flag  | Default Value |
+| -------                    | -------------------- | ----  | ------------- |
 | Container configuration.   | AGENT_CFG_URL        | -cfg  | file://conf/defs.json |
 | Repository authentication. | AGENT_AUTH_URL       | -auth | file://conf/auth.json |
 | Poll frequency.            | AGENT_CFG_POLL       | -poll | 30    |
