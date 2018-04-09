@@ -14,9 +14,28 @@ The container runs a compiled Go application that can be configured to get a rem
 
 Anything that can run Docker. (Windows is untested)
 
-## Testing
+## Getting Started
 
-### Example #1: Run example configutations from source.
+The agent can be configured with environment variables, command line flags, or a combination on both. Command line argument will override environment variables.
+
+### Environment Variables
+
+| Prupose                    | Environment Variable | Flag   | Default Value |
+| -------                    | -------------------- | ----   | ------------- |
+| Container configuration.   | AGENT_CFG_URL        | -cfg  | file://conf/defs.json |
+| Repository authentication. | AGENT_AUTH_URL       | -auth | file://conf/auth.json |
+| Poll frequency.            | AGENT_CFG_POLL       | -poll | 30    |
+| Remove existing containers on start. |            | -rm   | false |
+
+
+## Testing (with source)
+
+Get a list of commands.
+```bash
+
+```
+
+### Example #1: Run example configurations from source.
 
 
 
