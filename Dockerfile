@@ -10,6 +10,7 @@ RUN CGO_ENABLED=0 go build -a -installsuffix cgo -o /go/bin/agent /go/src/github
 
 FROM arm32v6/alpine:3.7
 
+RUN apk --no-cache add ca-certificates
 WORKDIR /
 
 COPY --from=builder /go/bin/agent /agent
