@@ -69,14 +69,23 @@ type iotAgent struct {
 
 type AgentOptions struct {
 	LogOut io.Writer
+	LogName string
 }
 
 // NewAgent creates a new iotAgent from a configuration url and a polling interval
 func NewAgent(cfgUrl string, authUrl string, poll int, opts AgentOptions) (agent iotAgent, err error) {
 
+	// Defaults
+	if opts.LogOut == nil {
+		opts.LogOut = os.Stdout
+	}
+
+	if opts.LogName == "" {
+		opts.LogName = "iotagent"
+	}
 
 	logConfig := bunyan.Config{
-		Name:   "iotagent",
+		Name:   opts.LogName,
 		Stream: opts.LogOut,
 		Level:  bunyan.LogLevelDebug,
 	}

@@ -16,8 +16,6 @@ func main() {
 	authUrl := iotagent.SetEnvIfEmpty("AGENT_AUTH_URL", "file://conf/auth.json")
 	cfgPoll := iotagent.SetEnvIfEmpty("AGENT_CFG_POLL", "30")
 
-
-
 	// cast poll to int
 	cfgPollInt, err := strconv.Atoi(cfgPoll)
 	if err != nil {
