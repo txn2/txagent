@@ -10,6 +10,7 @@ build:
   goos:
     - linux
     - windows
+    - darwin
 
   # GOARCH to build in.
   # For more info refer to https://golang.org/doc/install/source#environment
@@ -17,6 +18,9 @@ build:
   goarch:
     - amd64
     - arm
+
+  goarm:
+    - 6
 
 # Archive customization
 archive:
@@ -34,7 +38,7 @@ archive:
   # By default, `replacements` replace GOOS and GOARCH values with valid outputs
   # of `uname -s` and `uname -m` respectively.
   replacements:
-    arm: armhf
+    arm: arm32v6
     amd64: amd64
     386: 386
     darwin: macOS
@@ -68,6 +72,6 @@ dockers:
     goarm: 6
     binary: iotagent
     image: cjimti/iotagent
-    dockerfile: dockerfile/armhf/Dockerfile
+    dockerfile: dockerfile/arm32v6/Dockerfile
     tag_templates:
     - "armhf-{{ .Version }}"

@@ -32,10 +32,9 @@ Build without releasing:
 
 ## TODO
 
+- Check configuration on interval (ensure state)
+- Validate configs
 - Documentation, Use Case and Examples
-- Check configuration on interval
-- Option to include watchtower
-- Remote logging
 
 ## DONE
 
