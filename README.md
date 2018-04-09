@@ -12,7 +12,13 @@ The container runs a compiled Go application that can be configured to get a rem
 
 ## Supported Devices
 
-Intended for Raspberry Pi. Will be testing on other ARM boards as project progresses.
+Anything that can run Docker. (Windows is untested)
+
+## Testing
+
+### Example #1: Run example configutations from source.
+
+
 
 ## Using as a lib
 
