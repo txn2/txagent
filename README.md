@@ -1,14 +1,18 @@
-# WIP: IoT Docker Agent
+# iotagent - Simple Docker Container Orchestration
 
-# Work in progress. Do not use.
+# Stable / Work in progress.
 
-This is very early development as I refactor a number of working concepts into this new model. I am open to help and suggestions.
+This code is used in production on a few hundred iot devices. It was developed for with a very specific, yet recurring use case. Professionally I develop software for a number of platforms, including iot. As a hobbyist, I have a dozen or so different devices that I provision with Docker. This project is in the early stages of becoming more general purpose. In the mean time, you may have a similar need. **iotagent** is an uncomplicated way to provision iot devices running your Docker containers. Let me know if this project is useful to you and what features you would like to see.
 
 ----
 
-This project is intended to be a very simple docker container for IoT devices (that are able to run docker.) In developing application for IoT devices it is not always possible to push updates and configuration. The project uses a pull on interval model for basic docker container organization.
+This project is intended to be a very simple docker container for iot devices, that are able to run docker. **iotagent** has been tested on a few arm based devices, but is primarily used for the Raspberry Pi.
 
-The container runs a compiled Go application that can be configured to get a remote or local json configuration file, then uses the configuration to pull, run and update containers on a device.
+Pushing updates and configuration to devices is a complex and complicated problem, having to keep track of each device and it's state. **iotagent** uses a **pull** model for basic provisioning.
+
+The container runs a compiled Go application that can be configured to get a remote or local json configuration file, then uses the configuration to pull, run and monitor containers.
+
+
 
 ## Supported Devices
 
@@ -31,13 +35,16 @@ The agent can be configured with environment variables, command line flags, or a
 ## Testing (with source)
 
 Get a list of commands.
+
 ```bash
 go run ./agent.go --help
 ```
 
 ### Example #1: Run example configurations from source.
 
-
+```bash
+go run ./agent.go
+```
 
 ## Using as a lib
 
@@ -57,7 +64,8 @@ Build without releasing:
 
 ## TODO
 
-- Check configuration on interval (ensure state)
+- Get & check configuration on interval (ensure state)
+- Configuration auth
 - Validate configs
 - Documentation, Use Case and Examples
 
