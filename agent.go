@@ -54,28 +54,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	err = agent.CreateVolumes()
-	if err != nil {
-		panic(err)
-	}
-
-	err = agent.CreateNetworks()
-	if err != nil {
-		panic(err)
-	}
-
-	err = agent.PullContainers()
-	if err != nil {
-		panic(err)
-	}
-
-	err = agent.CreateContainers()
-	if err != nil {
-		panic(err)
-	}
-
-	// Run
-	err = agent.PollContainers()
+	err = agent.Run()
 	if err != nil {
 		panic(err)
 	}

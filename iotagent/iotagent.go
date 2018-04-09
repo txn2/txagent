@@ -134,11 +134,39 @@ func NewAgent(cfgUrl string, authUrl string, poll int, opts AgentOptions) (agent
 	return a, nil
 }
 
-// Authenticate a
-func (agent *iotAgent) Authenticate() error {
+
+// Run the agent
+func (agent *iotAgent) Run() error {
+	err := agent.CreateVolumes()
+	if err != nil {
+		return err
+	}
+
+	err = agent.CreateNetworks()
+	if err != nil {
+		return err
+	}
+
+	err = agent.PullContainers()
+	if err != nil {
+		return err
+	}
+
+	err = agent.CreateContainers()
+	if err != nil {
+		return err
+	}
+
+	// Run
+	err = agent.PollContainers()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
+
+
 
 // CreateVolumes creates docker volumes defined in the json configuration.
 func (agent *iotAgent) CreateVolumes() error {
@@ -216,7 +244,7 @@ func (agent *iotAgent) ContainerState() error {
 	}
 
 	for _, existingContainer := range existingContainers {
-		for name, _ := range agent.Cfg.Containers {
+		for name := range agent.Cfg.Containers {
 			if existingContainer.Names[0][1:] == name {
 				agent.Log.Info("Container State found container %s in state %s.", name, strings.ToUpper(existingContainer.State))
 			}
