@@ -63,7 +63,7 @@ dockers:
     goarm: ''
     binary: iotagent
     image: cjimti/iotagent
-    dockerfile: dockerfile/amd64/Dockerfile
+    dockerfile: dockerfiles/amd64/Dockerfile
     tag_templates:
     - "{{ .Version }}"
   -
@@ -72,6 +72,6 @@ dockers:
     goarm: 6
     binary: iotagent
     image: cjimti/iotagent
-    dockerfile: dockerfile/arm32v6/Dockerfile
+    dockerfile: dockerfiles/arm32v6/Dockerfile
     tag_templates:
     - "armhf-{{ .Version }}"
