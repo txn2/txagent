@@ -53,8 +53,8 @@ archive:
   # `README*` and `CHANGELOG*` (case-insensitive)
   files:
     - LICENSE
-    - example/defs.json
-    - example/auth.json
+    - conf/defs.json
+    - conf/auth.json
 
 dockers:
   -
