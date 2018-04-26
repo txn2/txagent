@@ -61,8 +61,8 @@ dockers:
     goos: linux
     goarch: amd64
     goarm: ''
-    binary: iotagent
-    image: cjimti/iotagent
+    binary: txagent
+    image: txn2/txagent
     dockerfile: dockerfiles/amd64/Dockerfile
     tag_templates:
     - "{{ .Version }}"
@@ -70,8 +70,8 @@ dockers:
     goos: linux
     goarch: arm
     goarm: 6
-    binary: iotagent
-    image: cjimti/iotagent
+    binary: txagent
+    image: txn2/txagent
     dockerfile: dockerfiles/arm32v6/Dockerfile
     tag_templates:
     - "armhf-{{ .Version }}"

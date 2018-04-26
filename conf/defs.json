@@ -3,7 +3,7 @@
     {
       "Name": "example",
       "Labels": {
-        "co.imti.iotagent.example": "example-volume"
+        "co.imti.txagent.example": "example-volume"
       },
       "Driver": "local"
     }
@@ -24,7 +24,7 @@
         ]
       },
       "Labels": {
-        "co.imti.iotagent.example": "example-network"
+        "co.imti.txagent.example": "example-network"
       }
     }
   },

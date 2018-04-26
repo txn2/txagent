@@ -1,4 +1,4 @@
-package iotagent
+package txagent
 
 import (
 	"bufio"
@@ -46,8 +46,8 @@ type AgentAuth struct {
 	Containers map[string]AgentContainerCfg
 }
 
-// iotAgent is the main iotAgent object for pulling and running containers.
-type iotAgent struct {
+// txagent is the main txagent object for pulling and running containers.
+type txagent struct {
 	CfgUrl  string
 	AuthUrl string
 	Poll    time.Duration
@@ -72,8 +72,8 @@ type AgentOptions struct {
 	LogName string
 }
 
-// NewAgent creates a new iotAgent from a configuration url and a polling interval
-func NewAgent(cfgUrl string, authUrl string, poll int, opts AgentOptions) (agent iotAgent, err error) {
+// NewAgent creates a new txagent from a configuration url and a polling interval
+func NewAgent(cfgUrl string, authUrl string, poll int, opts AgentOptions) (agent txagent, err error) {
 
 	// Defaults
 	if opts.LogOut == nil {
@@ -81,7 +81,7 @@ func NewAgent(cfgUrl string, authUrl string, poll int, opts AgentOptions) (agent
 	}
 
 	if opts.LogName == "" {
-		opts.LogName = "iotagent"
+		opts.LogName = "txagent"
 	}
 
 	logConfig := bunyan.Config{
@@ -94,7 +94,7 @@ func NewAgent(cfgUrl string, authUrl string, poll int, opts AgentOptions) (agent
 	if err != nil {
 		panic(err)
 	}
-	bunyanLogger.Info("Loading IoT iotAgent...")
+	bunyanLogger.Info("Loading IoT txagent...")
 
 	// load docker client
 	dockerApiVersion := SetEnvIfEmpty("DOCKER_API_VERSION", "1.35")
@@ -103,11 +103,11 @@ func NewAgent(cfgUrl string, authUrl string, poll int, opts AgentOptions) (agent
 	// get a Docker client
 	cli, err := client.NewEnvClient()
 	if err != nil {
-		return iotAgent{}, err
+		return txagent{}, err
 	}
 
 	// configure the agent
-	a := iotAgent{
+	a := txagent{
 		CfgUrl:  cfgUrl,
 		AuthUrl: authUrl,
 		Poll:    time.Duration(poll) * time.Second,
@@ -121,14 +121,14 @@ func NewAgent(cfgUrl string, authUrl string, poll int, opts AgentOptions) (agent
 	cfgJson := a.loadCfg()
 	a.marshalCfg(cfgJson)
 	if err != nil {
-		return iotAgent{}, err
+		return txagent{}, err
 	}
 
 	authJson := a.loadAuth()
 
 	a.marshalAuth(authJson)
 	if err != nil {
-		return iotAgent{}, err
+		return txagent{}, err
 	}
 
 	return a, nil
@@ -136,7 +136,7 @@ func NewAgent(cfgUrl string, authUrl string, poll int, opts AgentOptions) (agent
 
 
 // Run the agent
-func (agent *iotAgent) Run() error {
+func (agent *txagent) Run() error {
 	err := agent.CreateVolumes()
 	if err != nil {
 		return err
@@ -169,7 +169,7 @@ func (agent *iotAgent) Run() error {
 
 
 // CreateVolumes creates docker volumes defined in the json configuration.
-func (agent *iotAgent) CreateVolumes() error {
+func (agent *txagent) CreateVolumes() error {
 	ctx := context.Background()
 
 	for _, cfgVolume := range agent.Cfg.Volumes {
@@ -187,7 +187,7 @@ func (agent *iotAgent) CreateVolumes() error {
 
 // CreateNetworks create networks defined in the config. Will not create a
 // network if it already exists.
-func (agent *iotAgent) CreateNetworks() error {
+func (agent *txagent) CreateNetworks() error {
 	ctx := context.Background()
 
 	nets, err := agent.Cli.NetworkList(ctx, types.NetworkListOptions{})
@@ -218,7 +218,7 @@ func (agent *iotAgent) CreateNetworks() error {
 }
 
 // PollContainers list the status of containers on interval
-func (agent *iotAgent) PollContainers() error {
+func (agent *txagent) PollContainers() error {
 	err := agent.ContainerState()
 	if err != nil {
 		agent.Log.Error("Poll Containers received %s", err.Error())
@@ -232,7 +232,7 @@ func (agent *iotAgent) PollContainers() error {
 	return nil
 }
 
-func (agent *iotAgent) ContainerState() error {
+func (agent *txagent) ContainerState() error {
 	ctx := context.Background()
 	listOps := types.ContainerListOptions{All: true}
 
@@ -256,7 +256,7 @@ func (agent *iotAgent) ContainerState() error {
 
 // PullContainers as defined in the configuration file located at
 // environment variable AGENT_CFG_URL
-func (agent *iotAgent) PullContainers() error {
+func (agent *txagent) PullContainers() error {
 
 	ctx := context.Background()
 
@@ -305,7 +305,7 @@ func (agent *iotAgent) PullContainers() error {
 }
 
 // StopRemoveContainers defined in configuration json
-func (agent *iotAgent) StopRemoveContainers() error {
+func (agent *txagent) StopRemoveContainers() error {
 
 	ctx := context.Background()
 
@@ -356,7 +356,7 @@ func (agent *iotAgent) StopRemoveContainers() error {
 }
 
 // CreateContainers defined in configuration json
-func (agent *iotAgent) CreateContainers() error {
+func (agent *txagent) CreateContainers() error {
 
 	ctx := context.Background()
 
@@ -419,7 +419,7 @@ func (agent *iotAgent) CreateContainers() error {
 	return nil
 }
 
-func (agent *iotAgent) marshalAuth(authJson []byte) error {
+func (agent *txagent) marshalAuth(authJson []byte) error {
 
 	err := json.Unmarshal(authJson, &agent.Auth)
 	if err != nil {
@@ -432,9 +432,9 @@ func (agent *iotAgent) marshalAuth(authJson []byte) error {
 	return nil
 }
 
-func (agent *iotAgent) marshalCfg(cfgJson []byte) error {
+func (agent *txagent) marshalCfg(cfgJson []byte) error {
 
-	// make a new iotAgent configuration object
+	// make a new txagent configuration object
 	agent.Cfg = &AgentCfg{}
 
 	err := json.Unmarshal(cfgJson, agent.Cfg)
@@ -450,7 +450,7 @@ func (agent *iotAgent) marshalCfg(cfgJson []byte) error {
 	return nil
 }
 
-func (agent *iotAgent) loadAuth() (authJson []byte) {
+func (agent *txagent) loadAuth() (authJson []byte) {
 
 	agent.Log.Info("Loading %s", agent.AuthUrl)
 
@@ -469,7 +469,7 @@ func (agent *iotAgent) loadAuth() (authJson []byte) {
 	return []byte{}
 }
 
-func (agent *iotAgent) loadCfg() (cfgJson []byte) {
+func (agent *txagent) loadCfg() (cfgJson []byte) {
 
 	agent.Log.Info("Loading %s", agent.CfgUrl)
 
@@ -488,7 +488,7 @@ func (agent *iotAgent) loadCfg() (cfgJson []byte) {
 	return []byte{}
 }
 
-func (agent *iotAgent) loadFile(file string) (cfgJson []byte) {
+func (agent *txagent) loadFile(file string) (cfgJson []byte) {
 
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -499,7 +499,7 @@ func (agent *iotAgent) loadFile(file string) (cfgJson []byte) {
 	return b
 }
 
-func (agent *iotAgent) loadUrl(url string) (cfgJson []byte) {
+func (agent *txagent) loadUrl(url string) (cfgJson []byte) {
 
 	res, err := http.Get(url)
 	if err != nil {
@@ -518,7 +518,7 @@ func (agent *iotAgent) loadUrl(url string) (cfgJson []byte) {
 	return b
 }
 
-func (agent *iotAgent) convertUrl(url string) (proto, loc string) {
+func (agent *txagent) convertUrl(url string) (proto, loc string) {
 	proto = url[0:4]
 	loc = url
 

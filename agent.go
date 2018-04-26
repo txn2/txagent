@@ -6,15 +6,15 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/cjimti/iotagent/iotagent"
+	"github.com/txn2/txagent/txagent"
 )
 
 func main() {
 
 	// Get environment vars or use as defaults if they do not exist
-	cfgUrl := iotagent.SetEnvIfEmpty("AGENT_CFG_URL", "file://conf/defs.json")
-	authUrl := iotagent.SetEnvIfEmpty("AGENT_AUTH_URL", "file://conf/auth.json")
-	cfgPoll := iotagent.SetEnvIfEmpty("AGENT_CFG_POLL", "30")
+	cfgUrl := txagent.SetEnvIfEmpty("AGENT_CFG_URL", "file://conf/defs.json")
+	authUrl := txagent.SetEnvIfEmpty("AGENT_AUTH_URL", "file://conf/auth.json")
+	cfgPoll := txagent.SetEnvIfEmpty("AGENT_CFG_POLL", "30")
 
 	// cast poll to int
 	cfgPollInt, err := strconv.Atoi(cfgPoll)
@@ -39,7 +39,7 @@ func main() {
 	flag.Parse()
 
 	// get a new agent
-	agent, err := iotagent.NewAgent(*cfgPtr, *authPtr, *pollPtr, iotagent.AgentOptions{
+	agent, err := txagent.NewAgent(*cfgPtr, *authPtr, *pollPtr, txagent.AgentOptions{
 		LogOut: os.Stdout,
 	})
 

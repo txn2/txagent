@@ -1,14 +1,14 @@
-# iotagent - Simplified Docker container provisioning.
+# txagent - Simplified Docker container provisioning.
 
 # Stable / Work in progress.
 
-This code is used in production on a few hundred iot devices. It was developed for with a very specific, yet recurring use case. Professionally I develop software for a number of platforms, including iot. As a hobbyist, I have a dozen or so different devices that I provision with Docker. This project is in the early stages of becoming more general purpose. In the mean time, you may have a similar need. **iotagent** is an uncomplicated way to provision iot devices running your Docker containers. Let me know if this project is useful to you and what features you would like to see.
+This code is used in production on a few hundred iot devices. It was developed for with a very specific, yet recurring use case. Professionally I develop software for a number of platforms, including iot. As a hobbyist, I have a dozen or so different devices that I provision with Docker. This project is in the early stages of becoming more general purpose. In the mean time, you may have a similar need. **txagent** is an uncomplicated way to provision iot devices running your Docker containers. Let me know if this project is useful to you and what features you would like to see.
 
 ----
 
-This project is intended to be a very simple docker container for iot devices, that are able to run docker. **iotagent** has been tested on a few arm based devices, but is primarily used for the Raspberry Pi.
+This project is intended to be a very simple docker container for iot devices, that are able to run docker. **txagent** has been tested on a few arm based devices, but is primarily used for the Raspberry Pi.
 
-Pushing updates and configuration to devices is a complex and complicated problem, having to keep track of each device and it's state. **iotagent** uses a **pull** model for basic provisioning.
+Pushing updates and configuration to devices is a complex and complicated problem, having to keep track of each device and it's state. **txagent** uses a **pull** model for basic provisioning.
 
 The container runs a compiled Go application that can be configured to get a remote or local json configuration file, then uses the configuration to pull, run and monitor containers.
 
@@ -49,7 +49,7 @@ go run ./agent.go
 ## Using as a lib
 
 see GoDocs
-https://godoc.org/github.com/cjimti/iotagent/iotagent
+https://godoc.org/github.com/txn2/txagent/txagent
 
 ### Development
 
